@@ -15,23 +15,23 @@ import { createMint, mintTo } from "spl-token-bankrun";
 import { PublicKey, Keypair } from "@solana/web3.js";
 import NodeWallet from "@coral-xyz/anchor/dist/cjs/nodewallet";
 
-import IDL from "../target/idl/vesting.json";
-import { Vesting } from "../target/types/vesting";
+import IDL from "../target/idl/token_vesting.json";
+import { TokenVesting } from "../target/types/token_vesting";
 import { SYSTEM_PROGRAM_ID } from "@coral-xyz/anchor/dist/cjs/native/system";
 
-describe("Vesting Smart Contract Tests", () => {
+describe("Token vesting Smart Contract Tests", () => {
   const companyName = "Company";
   let beneficiary: Keypair;
   let vestingAccountKey: PublicKey;
   let treasuryTokenAccount: PublicKey;
   let employeeAccount: PublicKey;
   let provider: BankrunProvider;
-  let program: Program<Vesting>;
+  let program: Program<TokenVesting>;
   let banksClient: BanksClient;
   let employer: Keypair;
   let mint: PublicKey;
   let beneficiaryProvider: BankrunProvider;
-  let program2: Program<Vesting>;
+  let program2: Program<TokenVesting>;
   let context: ProgramTestContext;
 
   beforeAll(async () => {
@@ -57,7 +57,7 @@ describe("Vesting Smart Contract Tests", () => {
 
     anchor.setProvider(provider);
 
-    program = new Program<Vesting>(IDL as Vesting, provider);
+    program = new Program<TokenVesting>(IDL as TokenVesting, provider);
 
     banksClient = context.banksClient;
 
@@ -71,7 +71,10 @@ describe("Vesting Smart Contract Tests", () => {
     beneficiaryProvider = new BankrunProvider(context);
     beneficiaryProvider.wallet = new NodeWallet(beneficiary);
 
-    program2 = new Program<Vesting>(IDL as Vesting, beneficiaryProvider);
+    program2 = new Program<TokenVesting>(
+      IDL as TokenVesting,
+      beneficiaryProvider
+    );
 
     // Derive PDAs
     [vestingAccountKey] = PublicKey.findProgramAddressSync(
@@ -96,7 +99,7 @@ describe("Vesting Smart Contract Tests", () => {
 
   it("should create a vesting account", async () => {
     const tx = await program.methods
-      .createVestingAccount(companyName)
+      .createTokenVestingAccount(companyName)
       .accounts({
         signer: employer.publicKey,
         mint,
@@ -109,11 +112,11 @@ describe("Vesting Smart Contract Tests", () => {
       "confirmed"
     );
     console.log(
-      "Vesting Account Data:",
+      "TokenVesting Account Data:",
       JSON.stringify(vestingAccountData, null, 2)
     );
 
-    console.log("Create Vesting Account Transaction Signature:", tx);
+    console.log("Create TokenVesting Account Transaction Signature:", tx);
   });
 
   it("should fund the treasury token account", async () => {
@@ -133,7 +136,12 @@ describe("Vesting Smart Contract Tests", () => {
 
   it("should create an employee vesting account", async () => {
     const tx2 = await program.methods
-      .createEmployeeVesting(new BN(0), new BN(100), new BN(100), new BN(0))
+      .createEmployeeTokenVesting(
+        new BN(0),
+        new BN(100),
+        new BN(100),
+        new BN(0)
+      )
       .accounts({
         beneficiary: beneficiary.publicKey,
         vestingAccount: vestingAccountKey,
